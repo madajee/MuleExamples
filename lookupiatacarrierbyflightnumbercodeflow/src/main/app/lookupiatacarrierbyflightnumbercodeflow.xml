@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="LookUpIATACarrierByFlightNumberCodeFlow" processingStrategy="synchronous" doc:description="Return IATA Carrier Code">
+        <scripting:component doc:name="Groovy">
+            <scripting:script engine="Groovy"><![CDATA[def IATA = "UNKN"
+def flightnumber = payload
+int flightnumberInt = flightnumber.toInteger()
+
+switch (flightnumberInt) {
+			case 1600..1999:
+      			IATA = "RV"
+      			break
+			case 7086..7099:
+      			IATA = "RV"
+      			break
+			case 7500..7749:
+      			IATA = "RS"
+      			break
+			case 7570..7579:
+      			IATA = "RS"
+      			break
+			case 7060..7079:
+      			IATA = "RS"
+      			break
+     			default:
+      			IATA = "AC"
+      			break
+}
+return ["IATA":IATA]]]></scripting:script>
+        </scripting:component>
+        <logger message="IATA Carrier is : #[payload.IATA]" level="INFO" doc:name="Log the IATA Carrier Code"/>
+    </flow>
+    <flow name="lookupiatacarrierbyflightnumbercodeflowFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/getFlightCode" doc:name="HTTP" allowedMethods="GET"/>
+        <set-variable variableName="flightNumber" value="#[message.inboundProperties.'http.query.params'.flightNumber]" doc:name="Variable"/>
+        <logger message="#[flowVars.flightNumber]" level="INFO" doc:name="Logger"/>
+        <set-payload value="{
+   &quot;flightNumber&quot;: #[flowVars.flightNumber]
+}" doc:name="Set Payload"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+        	<dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+IATACarrierCode: lookup("LookUpIATACarrierByFlightNumberCodeFlow", payload.flightNumber).IATA]]></dw:set-payload>
+        </dw:transform-message>
+        <object-to-string-transformer doc:name="Object to String"/>
+        <logger message="Payload After Groovy : #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
