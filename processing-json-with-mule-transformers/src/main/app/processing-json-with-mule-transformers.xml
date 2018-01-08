@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="jsonFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/json" doc:name="HTTP"/>
+        <flow-ref name="no-obj2son-no-mine-settings-but-dw-input-metadata" doc:name="no-obj2son-no-mine-settings-but-dw-input-metadata"/>
+    </flow>
+    <sub-flow name="no-obj2son-no-mine-settings-but-dw-input-metadata">
+        <set-payload value="{
+		&quot;foo&quot;: &quot;111&quot;,
+		&quot;bar&quot;: &quot;222&quot;
+	}" doc:name="Set Payload"/>
+        <logger message="no-obj2son-no-mine-settings-but-dw-input-metadata: orginal msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="no-obj2son-no-mine-settings-but-dw-input-metadata, dw2java msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <logger message="no-obj2son-no-mine-settings-but-dw-input-metadata, foo=#[payload.foo], bar=#[payload.bar]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+    <sub-flow name="no-obj2son-with-mine-settings">
+        <set-payload value="{
+		&quot;foo&quot;: &quot;111&quot;,
+		&quot;bar&quot;: &quot;222&quot;
+	}" doc:name="Set Payload" mimeType="application/json"/>
+		<logger message="no-obj2son-with-mine-settings: orginal msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+		 <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="no-obj2son-with-mine-settings, dw2java msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <logger message="no-obj2son-with-mine-settings, foo=#[payload.foo], bar=#[payload.bar]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+    <sub-flow name="with-obj2json-xformer">
+	    <set-payload value="{
+		&quot;foo&quot;: &quot;111&quot;,
+		&quot;bar&quot;: &quot;222&quot;
+	}" doc:name="Set Payload"/>
+        <logger message="with obj2json xformer: orginal msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <logger message="with obj2json xformer: after obj2json msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="with obj2json xformer: after obj2json, dw2java msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <logger message="with obj2json xformer, foo=#[payload.foo], bar=#[payload.bar]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+    <sub-flow name="no-obj2json-no-mime">
+        <set-payload value="{
+	&quot;foo&quot;: &quot;111&quot;,
+	&quot;bar&quot;: &quot;222&quot;
+}" doc:name="Set Payload"/>
+        <logger message="no-obj2json-nomine, orginal msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="no-obj2json-nomine, aft obj2json, dw2java, msg type=#[message.dataType]" level="INFO" doc:name="Logger"/>
+        <logger message="no-obj2json-nomine, foo=#[payload.foo], bar=#[payload.bar]" level="INFO" doc:name="Logger"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+</mule>
