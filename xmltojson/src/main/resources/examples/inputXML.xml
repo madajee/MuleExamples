@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+	<employees>
+		<employee>
+			<id> 1</id>
+			<ContactName>rajesh</ContactName>
+			<sal>25000</sal>
+		</employee>
+		<employee>
+			<id> 2</id>
+			<ContactName>rohan</ContactName>
+			<sal>25000</sal>
+		</employee>
+		<employee>
+			<id> 3</id>
+			<ContactName>mike</ContactName>
+			<sal>28000</sal>
+		</employee>
+		<employee>
+			<id> 4</id>
+			<ContactName>charan</ContactName>
+			<sal>1000</sal>
+		</employee>
+		<employee>
+			<id> 5</id>
+			<ContactName>ravi</ContactName>
+			<sal>30000</sal>
+		</employee>
+	</employees>
+</Root>
