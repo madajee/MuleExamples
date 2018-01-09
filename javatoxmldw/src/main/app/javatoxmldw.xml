@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="javatoxmldwFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
+        <flow-ref name="javatoxmldwSubFlow2" doc:name="javatoxmldwSubFlow2"/>
+    </flow>
+    <sub-flow name="javatoxmldwSubFlow2">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+[ 
+	{  item_id: 'B001',  item_type: 'Black Dyes' }, 
+	{  item_id: 'B002',  item_type: 'Grey Dyes' },
+	{  item_id: 'B002',  item_type: 'Grey Dyes' }
+]]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="Original: #[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%namespace mes http://www.example.org/dwxml1
+%namespace mod http://www.example.org/dwxml2
+%output application/xml
+---
+mes#getItemResponse: {
+	mes#PageInfo: {
+ 	pageIndex:1,
+ 	pageSize: sizeOf (payload distinctBy $.item_id)
+ },
+	(payload groupBy $.item_id map {
+	mod#Item:{
+		id:$[0].item_id
+	}
+})
+}
+
+
+
+	
+		]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+    </sub-flow>
+    <sub-flow name="javatoxmldwSubFlow1">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/dw
+---
+[ 
+	{  item_id: 'B001',  item_type: 'Black Dyes' }, 
+	{  item_id: 'B002',  item_type: 'Grey Dyes' }
+]]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="Original: #[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/dw
+---
+payload groupBy $.item_id]]></dw:set-payload>
+        </dw:transform-message>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </sub-flow>
+    <sub-flow name="javatoxmldwSub_Flow">
+        <set-payload value="[ {  &quot;item_id&quot;: &quot;B001&quot;,  &quot;item_type&quot;: &quot;Black Dyes&quot; }, {  &quot;item_id&quot;: &quot;B002&quot;,  &quot;item_type&quot;: &quot;Grey Dyes&quot; } ]" mimeType="application/json" doc:name="Set Payload"/>
+        <logger message="Original Payload: #[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%namespace mes http://www.example.org/dwxml1
+%namespace mod http://www.example.org/dwxml2
+%output application/dw
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/dw
+---
+getItemsResponse: {
+ PageInfo: {
+ 	pageIndex:1,
+ 	pageSize: sizeOf payload 
+ },
+  items: payload.item_id map {
+ 		id: $.item_id
+ }
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <logger message="Mid:#[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="Payload After Transform: #[payload]" level="INFO" doc:name="Logger"/>
+        <set-payload value="[ {  item_id: 'B001',  item_type: 'Black Dyes' }, {  item_id: 'B002',  item_type: 'Grey Dyes' } ]" mimeType="application/json" doc:name="Set Payload"/>
+    </sub-flow>
+</mule>
